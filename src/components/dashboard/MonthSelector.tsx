@@ -49,7 +49,7 @@ export function MonthSelector({ currentMonth }: Props) {
               className="px-2.5 py-1 rounded text-xs font-semibold transition-all"
               style={
                 isActive
-                  ? { background: 'var(--text-primary)', color: 'var(--bg-base)' }
+                  ? { background: 'var(--accent-blue)', color: '#FFFFFF' }
                   : { color: 'var(--text-secondary)', background: 'transparent' }
               }
               onMouseEnter={(e) => {

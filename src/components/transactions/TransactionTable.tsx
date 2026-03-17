@@ -8,18 +8,33 @@ interface Props {
   total: number;
   page: number;
   pageSize: number;
+  // Filtros ativos — para construir URLs de paginação com contexto preservado
+  month?: string;
+  kind?: string;
+  category?: string;
+  search?: string;
 }
 
 const KIND_STYLE: Record<string, { bg: string; color: string }> = {
-  expense:           { bg: 'rgba(255,107,114,0.12)', color: '#FF6B72' },
-  income:            { bg: 'rgba(0,214,143,0.12)',   color: '#00D68F' },
-  internal_transfer: { bg: 'rgba(106,139,174,0.12)', color: '#6A8BAE' },
-  savings:           { bg: 'rgba(132,204,22,0.12)',  color: '#84CC16' },
-  investment:        { bg: 'rgba(99,102,241,0.12)',  color: '#818CF8' },
+  expense:           { bg: 'rgba(234,88,12,0.10)',  color: '#EA580C' },
+  income:            { bg: 'rgba(5,150,105,0.10)',  color: '#059669' },
+  internal_transfer: { bg: 'rgba(100,116,139,0.10)', color: '#64748B' },
+  savings:           { bg: 'rgba(37,99,235,0.10)',  color: '#2563EB' },
+  investment:        { bg: 'rgba(124,58,237,0.10)', color: '#7C3AED' },
 };
 
-export function TransactionTable({ rows, total, page, pageSize }: Props) {
+export function TransactionTable({ rows, total, page, pageSize, month, kind, category, search }: Props) {
   const totalPages = Math.ceil(total / pageSize);
+
+  function pageUrl(p: number): string {
+    const params: Record<string, string> = {};
+    if (month)    params.month    = month;
+    if (kind)     params.kind     = kind;
+    if (category) params.category = category;
+    if (search)   params.search   = search;
+    params.page = String(p);
+    return '/transactions?' + new URLSearchParams(params).toString();
+  }
 
   return (
     <div
@@ -68,7 +83,7 @@ export function TransactionTable({ rows, total, page, pageSize }: Props) {
                     <span className="inline-flex items-center gap-1.5">
                       <span
                         className="w-2 h-2 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: row.colorHex ?? '#6A8BAE' }}
+                        style={{ backgroundColor: row.colorHex ?? '#94A3B8' }}
                       />
                       <span style={{ color: 'var(--text-primary)' }}>{row.categoryName}</span>
                     </span>
@@ -80,7 +95,13 @@ export function TransactionTable({ rows, total, page, pageSize }: Props) {
                   <KindBadge kind={row.kind} />
                 </td>
                 <td className="px-4 py-3 text-right font-bold tabular-nums whitespace-nowrap">
-                  <span style={{ color: row.kind === 'income' ? 'var(--accent-green)' : 'var(--text-primary)' }}>
+                  <span style={{
+                    color: row.kind === 'income'
+                      ? 'var(--accent-green)'
+                      : row.kind === 'expense'
+                        ? 'var(--accent-orange)'
+                        : 'var(--text-secondary)',
+                  }}>
                     {row.kind === 'income' ? '+' : ''}{formatBRL(row.amountBrl)}
                   </span>
                 </td>
@@ -101,7 +122,7 @@ export function TransactionTable({ rows, total, page, pageSize }: Props) {
           <div className="flex gap-2">
             {page > 1 && (
               <Link
-                href={`?page=${page - 1}`}
+                href={pageUrl(page - 1)}
                 className="px-3 py-1 rounded transition-colors"
                 style={{ border: '1px solid var(--border)', color: 'var(--text-primary)' }}
               >
@@ -110,7 +131,7 @@ export function TransactionTable({ rows, total, page, pageSize }: Props) {
             )}
             {page < totalPages && (
               <Link
-                href={`?page=${page + 1}`}
+                href={pageUrl(page + 1)}
                 className="px-3 py-1 rounded transition-colors"
                 style={{ border: '1px solid var(--border)', color: 'var(--text-primary)' }}
               >
@@ -125,7 +146,7 @@ export function TransactionTable({ rows, total, page, pageSize }: Props) {
 }
 
 function KindBadge({ kind }: { kind: string }) {
-  const s = KIND_STYLE[kind] ?? { bg: 'rgba(106,139,174,0.12)', color: '#6A8BAE' };
+  const s = KIND_STYLE[kind] ?? { bg: 'rgba(100,116,139,0.10)', color: '#64748B' };
   return (
     <span
       className="inline-block px-2 py-0.5 rounded text-xs font-medium"

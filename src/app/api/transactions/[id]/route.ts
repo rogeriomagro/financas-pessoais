@@ -12,6 +12,8 @@ interface UpdateBody {
   merchant_id?: string | null;
   account_id?: string | null;
   description?: string;
+  amount_brl?: number;
+  date?: string;
   is_fixed?: boolean;
   reason?: string;
 }
@@ -37,6 +39,10 @@ export async function PATCH(
     return NextResponse.json({ error: 'description deve ser string' }, { status: 400 });
   }
 
+  if (body.amount_brl !== undefined && (typeof body.amount_brl !== 'number' || body.amount_brl <= 0)) {
+    return NextResponse.json({ error: 'amount_brl deve ser número positivo' }, { status: 400 });
+  }
+
   const supabase = await createSupabaseServerClient();
 
   // Lê estado atual para audit log
@@ -60,7 +66,9 @@ export async function PATCH(
   if (body.merchant_id !== undefined) updates['merchant_id'] = body.merchant_id;
   if (body.account_id !== undefined) updates['account_id'] = body.account_id;
   if (body.description !== undefined) updates['description'] = body.description.trim();
-  if (body.is_fixed !== undefined) updates['is_fixed'] = body.is_fixed;
+  if (body.is_fixed !== undefined)    updates['is_fixed']    = body.is_fixed;
+  if (body.amount_brl !== undefined)  updates['amount_brl']  = body.amount_brl;
+  if (body.date !== undefined)        updates['date']        = body.date;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'Nenhum campo para atualizar' }, { status: 400 });
@@ -99,4 +107,23 @@ export async function PATCH(
   });
 
   return NextResponse.json({ data: updated });
+}
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
+  const { id } = await params;
+  const supabase = await createSupabaseServerClient();
+
+  const { error } = await supabase
+    .from('transactions')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ deleted: true });
 }

@@ -82,6 +82,63 @@ export async function getTransactions(
   return { rows, total: count ?? 0 };
 }
 
+/**
+ * Top N maiores despesas do mês — para o bloco "Maiores Gastos" no dashboard.
+ */
+export async function getTopExpenses(yearMonth: string, limit = 5): Promise<TransactionRow[]> {
+  const supabase = await createSupabaseServerClient();
+
+  type RawRow = {
+    id: string;
+    date: string;
+    description: string;
+    kind: string;
+    amount_brl: number;
+    is_fixed: boolean;
+    category_source: string;
+    categories: Array<{ name: string; slug: string; color_hex: string }>;
+    merchants: Array<{ display_name: string }>;
+  };
+
+  const { data, error } = await supabase
+    .from('transactions')
+    .select(`
+      id,
+      date,
+      description,
+      kind,
+      amount_brl,
+      is_fixed,
+      category_source,
+      categories (name, slug, color_hex),
+      merchants (display_name)
+    `)
+    .eq('reference_month', `${yearMonth}-01`)
+    .eq('kind', 'expense')
+    .order('amount_brl', { ascending: false })
+    .limit(limit);
+
+  if (error) throw new Error(`getTopExpenses: ${error.message}`);
+
+  return ((data as unknown as RawRow[]) ?? []).map((row) => {
+    const cat      = Array.isArray(row.categories) ? row.categories[0] : null;
+    const merchant = Array.isArray(row.merchants)  ? row.merchants[0]  : null;
+    return {
+      id:             row.id,
+      date:           row.date,
+      description:    row.description,
+      kind:           row.kind as TransactionKind,
+      amountBrl:      Number(row.amount_brl),
+      isFixed:        row.is_fixed,
+      categoryName:   cat?.name      ?? null,
+      categorySlug:   cat?.slug      ?? null,
+      colorHex:       cat?.color_hex ?? null,
+      merchantName:   merchant?.display_name ?? null,
+      categorySource: row.category_source,
+    };
+  });
+}
+
 export async function getTransactionById(id: string) {
   const supabase = await createSupabaseServerClient();
 

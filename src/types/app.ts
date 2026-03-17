@@ -9,10 +9,48 @@ export interface CategoryTotal {
   transactionCount: number;
 }
 
+/** Tendência mensal — income + expense + net */
 export interface MonthlyTrend {
-  month: string;       // "YYYY-MM"
-  totalBrl: number;
+  month: string;          // "YYYY-MM"
+  incomeBrl: number;
+  expenseBrl: number;
+  netBrl: number;
   transactionCount: number;
+}
+
+/** Resumo de fluxo de caixa do mês */
+export interface CashflowSummary {
+  incomeBrl: number;
+  expenseBrl: number;
+  savingsBrl: number;
+  investmentBrl: number;
+  netBrl: number;
+  /** (incomeBrl - expenseBrl) / incomeBrl * 100 — null se income = 0 */
+  savingsRate: number | null;
+  incomeCount: number;
+  expenseCount: number;
+}
+
+/** Total por grupo analítico de categoria */
+export interface GroupTotal {
+  groupId: string;
+  groupName: string;
+  groupSlug: string;
+  colorHex: string;
+  groupKind: 'economic' | 'financial' | 'person' | 'project' | 'cost_center';
+  totalBrl: number;
+  pct: number;
+  transactionCount: number;
+}
+
+/** Resumo fixo vs variável do mês */
+export interface FixedVarSummary {
+  fixedBrl: number;
+  variableBrl: number;
+  fixedPct: number;
+  variablePct: number;
+  fixedCount: number;
+  variableCount: number;
 }
 
 export interface TransactionRow {

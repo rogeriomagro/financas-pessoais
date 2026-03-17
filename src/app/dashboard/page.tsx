@@ -1,17 +1,23 @@
 import { Suspense } from 'react';
 import {
   getDashboardPreferences,
+  getMonthlyCashflow,
   getMonthlyTotals,
   getMonthlyTrend,
-  getMonthSummary,
+  getGroupTotals,
 } from '@/lib/queries/dashboard';
+import { getTopExpenses } from '@/lib/queries/transactions';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { currentYearMonth, formatMonth } from '@/lib/formatters';
-import { SummaryCards } from '@/components/dashboard/SummaryCards';
+import { CashflowCards } from '@/components/dashboard/CashflowCards';
 import { CategoryBreakdown } from '@/components/dashboard/CategoryBreakdown';
+import { TopTransactionsTable } from '@/components/dashboard/TopTransactionsTable';
 import { TransferToggle } from '@/components/dashboard/TransferToggle';
 import { MonthSelector } from '@/components/dashboard/MonthSelector';
-import { TrendLineChart } from '@/components/charts/TrendLineChart';
+import { CashflowChart } from '@/components/charts/CashflowChart';
+import { GroupBreakdown } from '@/components/charts/GroupBreakdown';
 import { MonthlyBarChart } from '@/components/charts/MonthlyBarChart';
+import { CategoryTrendChart } from '@/components/charts/CategoryTrendChart';
 
 interface Props {
   searchParams: Promise<{ month?: string }>;
@@ -22,17 +28,23 @@ export default async function DashboardPage({ searchParams }: Props) {
   const month = monthParam ?? currentYearMonth();
 
   const prefs = await getDashboardPreferences();
+  const supabase = await createSupabaseServerClient();
 
-  const [summary, totals, trend] = await Promise.all([
-    getMonthSummary(month, prefs),
+  const [cashflow, totals, trend, groupTotals, topExpenses, { data: categories }] = await Promise.all([
+    getMonthlyCashflow(month),
     getMonthlyTotals(month, prefs),
-    getMonthlyTrend(12, prefs),
+    getMonthlyTrend(12),
+    getGroupTotals(month).catch(() => []),
+    getTopExpenses(month, 7),
+    supabase.from('categories').select('id, name, color_hex').eq('is_active', true).order('name'),
   ]);
 
-  return (
-    <main className="p-6 max-w-7xl mx-auto space-y-5">
+  const grandTotal = totals.reduce((s, t) => s + t.totalBrl, 0);
 
-      {/* ── Topo: título + mês ── */}
+  return (
+    <main className="p-5 max-w-screen-2xl mx-auto space-y-4">
+
+      {/* ── Cabeçalho ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <p className="text-xs font-semibold tracking-widest mb-0.5" style={{ color: 'var(--text-secondary)' }}>
@@ -47,24 +59,38 @@ export default async function DashboardPage({ searchParams }: Props) {
         </Suspense>
       </div>
 
-      {/* ── KPI Cards ── */}
-      <SummaryCards
-        total={summary.total}
-        count={summary.count}
-        topCategory={summary.topCategory}
-        month={month}
-      />
+      {/* ── Bloco 1: KPI Cards ── */}
+      <CashflowCards cashflow={cashflow} month={month} />
 
-      {/* ── Gráficos principais ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <CategoryBreakdown totals={totals} grandTotal={summary.total} />
-        <TrendLineChart data={trend} />
+      {/* ── Bloco 2: Cashflow Chart + Grupos ── */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <div className="xl:col-span-2">
+          <CashflowChart data={trend} />
+        </div>
+        <div>
+          <GroupBreakdown groups={groupTotals} grandTotal={grandTotal} />
+        </div>
       </div>
 
-      {/* ── Bar chart completo ── */}
-      <MonthlyBarChart totals={totals} />
+      {/* ── Bloco 3: Categorias + Top categorias (barchart) ── */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+        <div className="xl:col-span-5">
+          <CategoryBreakdown totals={totals} grandTotal={grandTotal} month={month} />
+        </div>
+        <div className="xl:col-span-7">
+          <MonthlyBarChart totals={totals} month={month} />
+        </div>
+      </div>
 
-      {/* ── Toggles (discretos, no rodapé) ── */}
+      {/* ── Bloco 4: Evolução por Categoria ── */}
+      {(categories?.length ?? 0) > 0 && (
+        <CategoryTrendChart categories={categories!} />
+      )}
+
+      {/* ── Bloco 5: Maiores gastos ── */}
+      <TopTransactionsTable rows={topExpenses} month={month} />
+
+      {/* ── Rodapé: Toggles ── */}
       <div
         className="flex items-center justify-end pt-2 pb-1 border-t"
         style={{ borderColor: 'var(--border)' }}

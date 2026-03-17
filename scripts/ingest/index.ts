@@ -10,7 +10,8 @@
  *   EXCEL_DIR (opcional, default: C:/Users/User/Desktop/Finanças)
  */
 
-import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
 import fs from 'fs';
 import path from 'path';
 import glob from 'fast-glob';
