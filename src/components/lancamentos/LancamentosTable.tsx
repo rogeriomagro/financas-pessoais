@@ -128,12 +128,6 @@ export function LancamentosTable({ entries, categories, month }: Props) {
     return list;
   }, [entries, search, filterCat, sortKey, sortDir]);
 
-  // Unique categories present in the current list
-  const presentCats = useMemo(() => {
-    const map = new Map<string, string>();
-    entries.forEach(e => { if (e.catId && e.catName) map.set(e.catId, e.catName); });
-    return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
-  }, [entries]);
 
   const openEdit = (e: Entry) => {
     setErr(null);
@@ -255,8 +249,8 @@ export function LancamentosTable({ entries, categories, month }: Props) {
           }}
         >
           <option value="">Todas as categorias</option>
-          {presentCats.map(([id, name]) => (
-            <option key={id} value={id}>{name}</option>
+          {sorted.map(cat => (
+            <option key={cat.id} value={cat.id}>{cat.name}</option>
           ))}
         </select>
 
