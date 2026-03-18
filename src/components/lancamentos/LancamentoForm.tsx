@@ -15,24 +15,8 @@ interface Props {
   onSuccess: () => void;
 }
 
-// Ordered list matching the user's specification
-const CATEGORY_ORDER = [
-  'lanche', 'lanche-da-tarde', 'supermercado', 'carro', 'alanna',
-  'cemig', 'copasa', 'faculdade', 'gasolina', 'outros',
-  'cartao', 'farmacia', 'casa', 'empresa', 'cerveja',
-  'academia', 'internet', 'telefone', 'poupanca', 'saude',
-  'lazer-passeios', 'aluguel', 'casamento',
-];
-
 function sortCategories(cats: Category[]): Category[] {
-  return [...cats].sort((a, b) => {
-    const ia = CATEGORY_ORDER.indexOf(a.slug);
-    const ib = CATEGORY_ORDER.indexOf(b.slug);
-    if (ia === -1 && ib === -1) return a.name.localeCompare(b.name, 'pt-BR');
-    if (ia === -1) return 1;
-    if (ib === -1) return -1;
-    return ia - ib;
-  });
+  return [...cats].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
 }
 
 export function LancamentoForm({ categories, defaultMonth, onSuccess }: Props) {
