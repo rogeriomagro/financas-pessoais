@@ -39,11 +39,11 @@ export default async function LancamentosPage({ searchParams }: Props) {
     description: string;
     amount_brl: number;
     category_id: string | null;
-    categories: Array<{ name: string; color_hex: string }> | null;
+    categories: { name: string; color_hex: string } | Array<{ name: string; color_hex: string }> | null;
   };
 
   const entries = ((recentTx ?? []) as unknown as RawTx[]).map(row => {
-    const cat = Array.isArray(row.categories) ? row.categories[0] : null;
+    const cat = Array.isArray(row.categories) ? row.categories[0] : row.categories;
     return {
       id:          row.id,
       date:        row.date,
